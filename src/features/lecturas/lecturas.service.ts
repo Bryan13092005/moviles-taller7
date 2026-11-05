@@ -140,3 +140,18 @@ export async function actualizarLecturaPendiente(id: number, cambios: CambiosLec
   );
   if (res.changes === 0) throw new Error('La lectura ya fue enviada y no se puede editar');
 }
+
+/** Obtiene la última ubicación GPS registrada para un medidor determinado. */
+export async function obtenerUltimaUbicacionMedidor(
+  medidorCodigo: string,
+): Promise<{ latitud: number; longitud: number } | null> {
+  const db = await getDb();
+  const row = await db.getFirstAsync<{ latitud: number | null; longitud: number | null }>(
+    `SELECT latitud, longitud FROM lecturas_pendientes
+     WHERE medidor_codigo = ? AND latitud IS NOT NULL AND longitud IS NOT NULL
+     ORDER BY fecha_registro DESC LIMIT 1`,
+    [medidorCodigo],
+  );
+  if (!row || row.latitud == null || row.longitud == null) return null;
+  return { latitud: row.latitud, longitud: row.longitud };
+}

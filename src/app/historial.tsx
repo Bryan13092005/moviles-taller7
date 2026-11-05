@@ -2,7 +2,7 @@ import { useForm } from '@tanstack/react-form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useRouter } from 'expo-router';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Alert,
   FlatList,
@@ -29,6 +29,7 @@ import {
   obtenerReferenciaConsumo,
   type LecturaRegistrada,
 } from '@/features/lecturas/lecturas.service';
+import { precargarDatosRemotos } from '@/features/sync/precarga.service';
 import { guardarFotoPermanente } from '@/utils/fileSystemStorage';
 
 const NUMERO = /^\d+(\.\d+)?$/;
@@ -54,7 +55,16 @@ function BotonVolver({ onPress, label = 'Volver a Consulta' }: { onPress: () => 
 
 export default function HistorialScreen() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [editando, setEditando] = useState<LecturaRegistrada | null>(null);
+  const [refrescando, setRefrescando] = useState(false);
+
+  // Al abrir el historial en cualquier teléfono: sincronizar datos remotos de MockAPI para obtener coordenadas y lecturas
+  useEffect(() => {
+    precargarDatosRemotos()
+      .then(() => queryClient.invalidateQueries({ queryKey: ['lecturas'] }))
+      .catch(() => undefined);
+  }, [queryClient]);
 
   // Refresco periódico para sincronizar el estado de los chips
   const { data: lecturas = [] } = useQuery({
@@ -76,6 +86,16 @@ export default function HistorialScreen() {
     setEditando(item);
   };
 
+  const handleRefresh = async () => {
+    setRefrescando(true);
+    try {
+      await precargarDatosRemotos();
+      await queryClient.invalidateQueries({ queryKey: ['lecturas'] });
+    } finally {
+      setRefrescando(false);
+    }
+  };
+
   return (
     <View className="flex-1 bg-background">
       <HeaderEpmaps subtitulo="Historial" />
@@ -83,6 +103,8 @@ export default function HistorialScreen() {
         data={lecturas}
         keyExtractor={(l) => String(l.id)}
         contentContainerClassName="p-[18px] pb-9 gap-3.5"
+        refreshing={refrescando}
+        onRefresh={handleRefresh}
         ListHeaderComponent={
           <View className="mb-1.5">
             <BotonVolver onPress={() => router.back()} label="Volver a Consulta" />
@@ -104,103 +126,117 @@ export default function HistorialScreen() {
         }
         renderItem={({ item }) => {
           const pendiente = item.sincronizado === 0;
+          const tieneUbicacion =
+            item.latitud != null &&
+            item.longitud != null &&
+            !isNaN(Number(item.latitud)) &&
+            !isNaN(Number(item.longitud));
+
           return (
-            <PressableScale
-              onPress={() => handlePressItem(item)}
-              className={`bg-card rounded-xl p-4 border border-border border-l-4 shadow-sm ${
+            <View
+              className={`bg-card rounded-2xl p-4 border border-border border-l-4 shadow-sm ${
                 pendiente ? 'border-l-warning' : 'border-l-success'
               }`}>
-              <View className="flex-row justify-between items-center">
-                <View>
-                  <Text className="font-roboto text-xs text-muted">Medidor</Text>
-                  <Text className="font-roboto-bold text-lg text-primary">
-                    {item.medidor_codigo}
-                  </Text>
-                </View>
-                <View
-                  className={`px-2.5 py-1 rounded-lg ${
-                    pendiente ? 'bg-warning-soft' : 'bg-success-soft'
-                  }`}>
-                  <Text
-                    className={`font-roboto-bold text-xs ${
-                      pendiente ? 'text-warning' : 'text-success'
+              {/* Contenido interactivo de la lectura */}
+              <PressableScale onPress={() => handlePressItem(item)}>
+                <View className="flex-row justify-between items-center">
+                  <View>
+                    <Text className="font-roboto text-xs text-muted">Medidor</Text>
+                    <Text className="font-roboto-bold text-lg text-primary">
+                      {item.medidor_codigo}
+                    </Text>
+                  </View>
+                  <View
+                    className={`px-2.5 py-1 rounded-lg ${
+                      pendiente ? 'bg-warning-soft' : 'bg-success-soft'
                     }`}>
-                    {pendiente ? '⏱ PENDIENTE' : '✓ ENVIADO'}
-                  </Text>
+                    <Text
+                      className={`font-roboto-bold text-xs ${
+                        pendiente ? 'text-warning' : 'text-success'
+                      }`}>
+                      {pendiente ? '⏱ PENDIENTE' : '✓ ENVIADO'}
+                    </Text>
+                  </View>
                 </View>
-              </View>
 
-              <View className="h-px bg-border my-2.5" />
+                <View className="h-px bg-border my-2.5" />
 
-              <View className="flex-row justify-between py-[3px]">
-                <Text className="font-roboto text-[13px] text-muted">Estado del medidor:</Text>
-                <Text className="font-roboto-medium text-sm text-foreground">
-                  {item.estado_medidor}
-                </Text>
-              </View>
-
-              <View className="flex-row justify-between py-[3px]">
-                <Text className="font-roboto text-[13px] text-muted">Fecha de registro:</Text>
-                <Text className="font-roboto-medium text-sm text-foreground">
-                  {formatoFecha(item.fecha_registro)}
-                </Text>
-              </View>
-
-              {item.lectura !== null && (
                 <View className="flex-row justify-between py-[3px]">
-                  <Text className="font-roboto text-[13px] text-muted">Lectura tomada:</Text>
-                  <Text className="font-roboto-bold text-[15px] text-primary">{item.lectura}</Text>
-                </View>
-              )}
-
-              {item.consumo_calculado !== null && (
-                <View className="flex-row justify-between py-[3px]">
-                  <Text className="font-roboto text-[13px] text-muted">Consumo calculado:</Text>
+                  <Text className="font-roboto text-[13px] text-muted">Estado del medidor:</Text>
                   <Text className="font-roboto-medium text-sm text-foreground">
-                    {item.consumo_calculado} m³
+                    {item.estado_medidor}
                   </Text>
                 </View>
-              )}
 
-              {item.motivo && (
                 <View className="flex-row justify-between py-[3px]">
-                  <Text className="font-roboto text-[13px] text-muted">Motivo:</Text>
-                  <Text className="font-roboto-medium text-sm text-foreground">{item.motivo}</Text>
-                </View>
-              )}
-
-              {item.descripcion_dano && (
-                <View className="flex-row justify-between py-[3px]">
-                  <Text className="font-roboto text-[13px] text-muted">Daño:</Text>
+                  <Text className="font-roboto text-[13px] text-muted">Fecha de registro:</Text>
                   <Text className="font-roboto-medium text-sm text-foreground">
-                    {item.descripcion_dano}
+                    {formatoFecha(item.fecha_registro)}
                   </Text>
                 </View>
-              )}
 
-              <View className="mt-2.5 pt-2 border-t border-slate-100">
-                {pendiente ? (
-                  <Text className="font-roboto-medium text-[13px] text-secondary">
-                    ✏️ Toque para editar lectura
-                  </Text>
-                ) : (
-                  <Text className="font-roboto-medium text-[13px] text-emerald-700">
-                    🔒 Transmitido a oficina · Registro protegido
-                  </Text>
+                {item.lectura !== null && (
+                  <View className="flex-row justify-between py-[3px]">
+                    <Text className="font-roboto text-[13px] text-muted">Lectura tomada:</Text>
+                    <Text className="font-roboto-bold text-[15px] text-primary">{item.lectura}</Text>
+                  </View>
                 )}
-              </View>
 
-              {/* Visor de mapa compacto si hay coordenadas guardadas */}
-              {item.latitud !== null && item.longitud !== null && (
-                <View className="mt-3">
+                {item.consumo_calculado !== null && (
+                  <View className="flex-row justify-between py-[3px]">
+                    <Text className="font-roboto text-[13px] text-muted">Consumo calculado:</Text>
+                    <Text className="font-roboto-medium text-sm text-foreground">
+                      {item.consumo_calculado} m³
+                    </Text>
+                  </View>
+                )}
+
+                {item.motivo && (
+                  <View className="flex-row justify-between py-[3px]">
+                    <Text className="font-roboto text-[13px] text-muted">Motivo:</Text>
+                    <Text className="font-roboto-medium text-sm text-foreground">{item.motivo}</Text>
+                  </View>
+                )}
+
+                {item.descripcion_dano && (
+                  <View className="flex-row justify-between py-[3px]">
+                    <Text className="font-roboto text-[13px] text-muted">Daño:</Text>
+                    <Text className="font-roboto-medium text-sm text-foreground">
+                      {item.descripcion_dano}
+                    </Text>
+                  </View>
+                )}
+
+                <View className="mt-2.5 pt-2 border-t border-slate-100">
+                  {pendiente ? (
+                    <Text className="font-roboto-medium text-[13px] text-secondary">
+                      ✏️ Toque para editar lectura
+                    </Text>
+                  ) : (
+                    <Text className="font-roboto-medium text-[13px] text-emerald-700">
+                      🔒 Transmitido a oficina · Registro protegido
+                    </Text>
+                  )}
+                </View>
+              </PressableScale>
+
+              {/* ── Mapa DENTRO de la tarjeta ──────────────────────────────── */}
+              {tieneUbicacion ? (
+                <View className="mt-3.5 pt-3 border-t border-border">
                   <MeterLocationViewer
-                    latitud={item.latitud}
-                    longitud={item.longitud}
-                    altura={160}
+                    latitud={Number(item.latitud)}
+                    longitud={Number(item.longitud)}
+                    altura={180}
                   />
                 </View>
+              ) : (
+                <View className="mt-3 pt-2.5 border-t border-slate-100 flex-row items-center gap-1.5">
+                  <Text className="font-roboto text-xs text-muted">
+                    📍 Sin coordenadas GPS registradas
+                  </Text>
+                </View>
               )}
-            </PressableScale>
+            </View>
           );
         }}
       />
@@ -448,7 +484,10 @@ function EditarLecturaModal({
             </Text>
 
             {/* Visor de mapa si hay coordenadas guardadas */}
-            {lectura.latitud !== null && lectura.longitud !== null && (
+            {typeof lectura.latitud === 'number' &&
+              typeof lectura.longitud === 'number' &&
+              !isNaN(lectura.latitud) &&
+              !isNaN(lectura.longitud) && (
               <View className="mb-3">
                 <MeterLocationViewer
                   latitud={lectura.latitud}

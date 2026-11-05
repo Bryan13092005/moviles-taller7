@@ -1,4 +1,5 @@
 import { useForm } from '@tanstack/react-form';
+import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
@@ -17,7 +18,9 @@ import {
 import { appAlert } from '@/components/app-alert';
 import { FadeSlideIn } from '@/components/animations/fade-slide-in';
 import { HeaderEpmaps } from '@/components/header-epmaps';
+import { MeterLocationViewer } from '@/components/meter-location-viewer';
 import { getSession, logout } from '@/features/auth/auth.service';
+import { obtenerUltimaUbicacionMedidor } from '@/features/lecturas/lecturas.service';
 import { useRecuperarBorrador } from '@/features/lecturas/useRecuperarBorrador';
 import { useLecturaStore } from '@/features/lecturas/useLecturaStore';
 import { validarCodigoMedidor } from '@/features/medidores/medidores.validator';
@@ -36,6 +39,14 @@ export default function BusquedaScreen() {
   const [nombreSesion, setNombreSesion] = useState('');
   const query = useMedidorQuery(codigoConsulta);
   const medidor = query.data ?? null;
+
+  const ubicacionQuery = useQuery({
+    queryKey: ['medidor-ubicacion', medidor?.codigo],
+    queryFn: () => (medidor ? obtenerUltimaUbicacionMedidor(medidor.codigo) : null),
+    enabled: !!medidor?.codigo,
+  });
+  const ubicacionMedidor = ubicacionQuery.data ?? null;
+
   const errorConsulta = query.error
     ? query.error instanceof Error
       ? query.error.message
@@ -228,6 +239,17 @@ export default function BusquedaScreen() {
                   </Text>
                 </View>
               ))}
+
+              {ubicacionMedidor && (
+                <View className="mt-4 pt-3 border-t border-border">
+                  <MeterLocationViewer
+                    latitud={ubicacionMedidor.latitud}
+                    longitud={ubicacionMedidor.longitud}
+                    altura={180}
+                  />
+                </View>
+              )}
+
               <Pressable
                 className="min-h-[58px] rounded-2xl bg-secondary items-center justify-center border-b-4 border-b-secondary-dark shadow-md active:opacity-85 mt-4"
                 onPress={() => {
