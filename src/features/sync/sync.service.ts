@@ -73,8 +73,9 @@ export async function sincronizarLecturasPendientes(): Promise<ResultadoSync> {
               f.consumo_calculado > f.promedio_mensual * 3,
             fotoURL: f.foto_uri ?? undefined,
             fechaRegistro: f.fecha_registro,
-            latitud: f.latitud,
-            longitud: f.longitud,
+            // Solo incluir si hay valor numérico; omitir el campo si es null.
+            ...(f.latitud !== null && f.latitud !== undefined && { latitud: f.latitud }),
+            ...(f.longitud !== null && f.longitud !== undefined && { longitud: f.longitud }),
           });
         }
 

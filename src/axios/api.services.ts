@@ -16,10 +16,10 @@ export interface Lectura {
   esAnomalo: boolean;
   fotoURL?: string;
   fechaRegistro: string;
-  /** Latitud GPS del punto de registro del medidor. */
-  latitud?: number | null;
-  /** Longitud GPS del punto de registro del medidor. */
-  longitud?: number | null;
+  /** Latitud GPS del punto de registro del medidor (decimal, ej. -0.180653). */
+  latitud?: number;
+  /** Longitud GPS del punto de registro del medidor (decimal, ej. -78.467838). */
+  longitud?: number;
 }
 
 export const medidoresService = {

@@ -16,6 +16,7 @@ import { appAlert } from '@/components/app-alert';
 import { FadeSlideIn } from '@/components/animations/fade-slide-in';
 import { BotonCancelarRegistro } from '@/components/boton-cancelar-registro';
 import { HeaderEpmaps } from '@/components/header-epmaps';
+import { MeterLocationPicker } from '@/components/meter-location-picker';
 import { ProgressBarRegistro } from '@/components/progress-bar-registro';
 import { calcularConsumo } from '@/features/lecturas/calculoConsumo';
 import { guardarLecturaLocal } from '@/features/lecturas/lecturas.service';
@@ -65,6 +66,9 @@ export default function ConfirmacionScreen() {
 
   // R7: Foto obligatoria si el consumo es anómalo o el medidor está dañado
   const fotoObligatoria = datos.esAnomalo || datos.estadoMedidor === 'danado';
+
+  /** La ubicación GPS debe estar confirmada para habilitar el guardado. */
+  const ubicacionConfirmada = datos.latitud !== null && datos.longitud !== null;
 
   const solicitarPermiso = async () => {
     const res = await pedirPermiso();
@@ -123,6 +127,8 @@ export default function ConfirmacionScreen() {
         descripcionDano: datos.descripcionDano || undefined,
         consumoCalculado: consumo,
         fotoUri: datos.fotoUri,
+        latitud: datos.latitud,
+        longitud: datos.longitud,
       });
 
       useLecturaStore.getState().resetFormulario();
@@ -145,6 +151,15 @@ export default function ConfirmacionScreen() {
   };
 
   const solicitarConfirmacionGuardado = () => {
+    if (!ubicacionConfirmada) {
+      Alert.alert(
+        'Ubicación Requerida',
+        'Debe confirmar la ubicación GPS del medidor antes de guardar la lectura.',
+        [{ text: 'Entendido', style: 'default' }],
+      );
+      return;
+    }
+
     if (fotoObligatoria && !datos.fotoUri) {
       Alert.alert(
         'Fotografía Requerida',
@@ -261,6 +276,22 @@ export default function ConfirmacionScreen() {
           )}
         </View>
 
+        {/* ── Selector de Ubicación GPS ───────────────────────────────────── */}
+        <MeterLocationPicker
+          latitudInicial={datos.latitud}
+          longitudInicial={datos.longitud}
+          onConfirmar={(lat, lng) => datos.setUbicacion(lat, lng)}
+        />
+
+        {/* Aviso de ubicación pendiente */}
+        {!ubicacionConfirmada && (
+          <View className="bg-warning-soft border border-warning/50 rounded-xl px-4 py-3 mb-4">
+            <Text className="font-roboto-medium text-[13px] text-amber-800">
+              📍 Confirme la ubicación GPS en el mapa antes de guardar la lectura.
+            </Text>
+          </View>
+        )}
+
         {/* Tarjeta Visor de Fotografía */}
         <View className="bg-card rounded-2xl border border-border p-[18px] mb-5 shadow-sm">
           <Text className="font-roboto-medium text-[15px] text-primary mb-3">
@@ -298,8 +329,10 @@ export default function ConfirmacionScreen() {
 
         {/* Botón Principal Destacado */}
         <Pressable
-          className="min-h-[58px] rounded-[14px] bg-primary items-center justify-center px-6 shadow-md active:opacity-90 disabled:opacity-50"
-          disabled={guardando}
+          className={`min-h-[58px] rounded-[14px] items-center justify-center px-6 shadow-md active:opacity-90 disabled:opacity-50 ${
+            ubicacionConfirmada ? 'bg-primary' : 'bg-slate-400'
+          }`}
+          disabled={guardando || !ubicacionConfirmada}
           onPress={solicitarConfirmacionGuardado}>
           {guardando ? (
             <ActivityIndicator colorClassName="accent-white" size="small" />

@@ -18,7 +18,9 @@
       "predictiveBackGestureEnabled": false,
       "permissions": [
         "android.permission.CAMERA",
-        "android.permission.RECORD_AUDIO"
+        "android.permission.RECORD_AUDIO",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION"
       ],
       "package": "com.brsm2005.pruebaonebs"
     },
@@ -42,6 +44,13 @@
         "expo-camera",
         {
           "cameraPermission": "EPMAPS Campo necesita la cámara para la foto de respaldo del medidor."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "EPMAPS Campo necesita acceder a su ubicación GPS para registrar la posición exacta del medidor.",
+          "locationWhenInUsePermission": "EPMAPS Campo necesita acceder a su ubicación GPS para registrar la posición exacta del medidor."
         }
       ]
     ],

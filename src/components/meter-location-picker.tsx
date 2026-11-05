@@ -241,3 +241,4 @@ export function MeterLocationPicker({ latitudInicial, longitudInicial, onConfirm
     </View>
   );
 }
+

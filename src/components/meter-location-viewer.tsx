@@ -89,3 +89,4 @@ export function MeterLocationViewer({ latitud, longitud, altura = 220 }: Props) 
     </View>
   );
 }
+

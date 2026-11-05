@@ -21,6 +21,7 @@ import { appAlert } from '@/components/app-alert';
 import { FadeSlideIn } from '@/components/animations/fade-slide-in';
 import { PressableScale } from '@/components/animations/pressable-scale';
 import { HeaderEpmaps } from '@/components/header-epmaps';
+import { MeterLocationViewer } from '@/components/meter-location-viewer';
 import { calcularConsumo } from '@/features/lecturas/calculoConsumo';
 import {
   actualizarLecturaPendiente,
@@ -188,6 +189,17 @@ export default function HistorialScreen() {
                   </Text>
                 )}
               </View>
+
+              {/* Visor de mapa compacto si hay coordenadas guardadas */}
+              {item.latitud !== null && item.longitud !== null && (
+                <View className="mt-3">
+                  <MeterLocationViewer
+                    latitud={item.latitud}
+                    longitud={item.longitud}
+                    altura={160}
+                  />
+                </View>
+              )}
             </PressableScale>
           );
         }}
@@ -434,6 +446,17 @@ function EditarLecturaModal({
             <Text className="font-roboto-medium text-sm text-secondary my-2">
               Estado: {lectura.estado_medidor}
             </Text>
+
+            {/* Visor de mapa si hay coordenadas guardadas */}
+            {lectura.latitud !== null && lectura.longitud !== null && (
+              <View className="mb-3">
+                <MeterLocationViewer
+                  latitud={lectura.latitud}
+                  longitud={lectura.longitud}
+                  altura={180}
+                />
+              </View>
+            )}
 
             {!esInaccesible && (
               <form.Field name="lectura">
