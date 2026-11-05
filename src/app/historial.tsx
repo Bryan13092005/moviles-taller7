@@ -4,7 +4,6 @@ import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
-  Alert,
   FlatList,
   Image,
   KeyboardAvoidingView,
@@ -16,6 +15,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import LottieView from 'lottie-react-native';
 
 import { appAlert } from '@/components/app-alert';
 import { FadeSlideIn } from '@/components/animations/fade-slide-in';
@@ -31,6 +31,8 @@ import {
 } from '@/features/lecturas/lecturas.service';
 import { precargarDatosRemotos } from '@/features/sync/precarga.service';
 import { guardarFotoPermanente } from '@/utils/fileSystemStorage';
+
+const ANIMACION_REFRESH = require('../../assets/animations/refresh animation.json');
 
 const NUMERO = /^\d+(\.\d+)?$/;
 
@@ -77,9 +79,10 @@ export default function HistorialScreen() {
   const handlePressItem = (item: LecturaRegistrada) => {
     const esPendiente = item.sincronizado === 0;
     if (!esPendiente) {
-      Alert.alert(
+      appAlert(
         'Lectura Sincronizada',
         'Esta lectura ya fue transmitida a la oficina central y no puede ser modificada.',
+        'info',
       );
       return;
     }
@@ -108,20 +111,79 @@ export default function HistorialScreen() {
         ListHeaderComponent={
           <View className="mb-1.5">
             <BotonVolver onPress={() => router.back()} label="Volver a Consulta" />
-            <Text className="font-roboto-bold text-2xl text-primary mt-1">
-              Historial de Lecturas
-            </Text>
-            <Text className="font-roboto text-sm text-muted mt-0.5">
-              Listado de lecturas registradas en el dispositivo móvil.
-            </Text>
+            <View className="flex-row justify-between items-center mt-1">
+              <View className="flex-1 mr-2">
+                <Text className="font-roboto-bold text-2xl text-primary">
+                  Historial de Lecturas
+                </Text>
+                <Text className="font-roboto text-sm text-muted mt-0.5">
+                  Listado de lecturas registradas en el dispositivo móvil.
+                </Text>
+              </View>
+              <Pressable
+                onPress={handleRefresh}
+                disabled={refrescando}
+                className="flex-row items-center bg-input border border-border rounded-xl py-2 px-3 active:opacity-85"
+                accessibilityRole="button"
+                accessibilityLabel="Sincronizar historial">
+                <View className="w-5 h-5 items-center justify-center mr-1.5">
+                  <LottieView
+                    source={ANIMACION_REFRESH}
+                    autoPlay
+                    loop={refrescando}
+                    style={{ width: 20, height: 20 }}
+                  />
+                </View>
+                <Text className="font-roboto-medium text-xs text-primary">
+                  {refrescando ? 'Sincronizando' : 'Sincronizar'}
+                </Text>
+              </Pressable>
+            </View>
+
+            {refrescando && (
+              <View className="flex-row items-center bg-sky-50 border border-sky-200 rounded-xl py-2.5 px-3.5 mt-3 gap-2.5">
+                <View className="w-6 h-6 items-center justify-center">
+                  <LottieView
+                    source={ANIMACION_REFRESH}
+                    autoPlay
+                    loop={true}
+                    style={{ width: 24, height: 24 }}
+                  />
+                </View>
+                <Text className="font-roboto-medium text-xs text-primary flex-1">
+                  Sincronizando lecturas con la oficina central...
+                </Text>
+              </View>
+            )}
           </View>
         }
         ListEmptyComponent={
-          <View className="items-center justify-center mt-12">
-            <Text className="text-[42px] mb-2">📋</Text>
-            <Text className="font-roboto text-muted text-center text-[15px]">
-              Aún no hay lecturas registradas en esta jornada.
-            </Text>
+          <View className="items-center justify-center mt-12 p-4">
+            {refrescando ? (
+              <>
+                <View className="w-20 h-20 items-center justify-center mb-3">
+                  <LottieView
+                    source={ANIMACION_REFRESH}
+                    autoPlay
+                    loop={true}
+                    style={{ width: 80, height: 80 }}
+                  />
+                </View>
+                <Text className="font-roboto-bold text-primary text-base text-center">
+                  Cargando lecturas...
+                </Text>
+                <Text className="font-roboto text-muted text-center text-xs mt-1">
+                  Obteniendo datos de las lecturas registradas
+                </Text>
+              </>
+            ) : (
+              <>
+                <Text className="text-[42px] mb-2">📋</Text>
+                <Text className="font-roboto text-muted text-center text-[15px]">
+                  Aún no hay lecturas registradas en esta jornada.
+                </Text>
+              </>
+            )}
           </View>
         }
         renderItem={({ item }) => {
@@ -304,7 +366,7 @@ function EditarLecturaModal({
       setFotoUri(guardarFotoPermanente(foto.uri, lectura.medidor_codigo));
       setCamaraAbierta(false);
     } catch {
-      Alert.alert('Error', 'No se pudo guardar la fotografía.');
+      appAlert('Error', 'No se pudo guardar la fotografía.', 'error');
     }
   };
 
@@ -319,9 +381,10 @@ function EditarLecturaModal({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['lecturas'] });
       onClose();
+      appAlert('Lectura actualizada', 'La lectura se actualizó correctamente.', 'success');
     },
     onError: (e) => {
-      Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo actualizar la lectura.');
+      appAlert('Error', e instanceof Error ? e.message : 'No se pudo actualizar la lectura.', 'error');
       queryClient.invalidateQueries({ queryKey: ['lecturas'] });
     },
   });
@@ -342,7 +405,7 @@ function EditarLecturaModal({
   }) => {
     if (esInaccesible) {
       if (!valores.motivo.trim()) {
-        Alert.alert('Motivo Requerido', 'El motivo de inaccesibilidad es obligatorio.');
+        appAlert('Motivo Requerido', 'El motivo de inaccesibilidad es obligatorio.', 'warning');
         return;
       }
       form.handleSubmit();
@@ -350,18 +413,22 @@ function EditarLecturaModal({
     }
 
     if (esDanado && !valores.descripcion.trim()) {
-      Alert.alert('Descripción Requerida', 'La descripción del daño es obligatoria.');
+      appAlert('Descripción Requerida', 'La descripción del daño es obligatoria.', 'warning');
       return;
     }
 
     const valorLimpio = valores.lectura.trim();
     if (!valorLimpio && !esDanado) {
-      Alert.alert('Lectura Requerida', 'La lectura actual es obligatoria.');
+      appAlert('Lectura Requerida', 'La lectura actual es obligatoria.', 'warning');
       return;
     }
 
     if (valorLimpio && !NUMERO.test(valorLimpio)) {
-      Alert.alert('Lectura Inválida', 'La lectura ingresada debe contener exclusivamente números.');
+      appAlert(
+        'Lectura Inválida',
+        'La lectura ingresada debe contener exclusivamente números.',
+        'warning',
+      );
       return;
     }
 
@@ -369,9 +436,10 @@ function EditarLecturaModal({
     if (valorLimpio && referencia) {
       const numLectura = Number(valorLimpio);
       if (numLectura < referencia.ultimaLectura) {
-        Alert.alert(
+        appAlert(
           'Lectura Inválida',
           `La lectura ingresada (${numLectura}) no puede ser menor a la lectura anterior (${referencia.ultimaLectura}).`,
+          'warning',
         );
         return;
       }
@@ -382,21 +450,22 @@ function EditarLecturaModal({
         referencia.promedioMensual,
       );
       if (resConsumo.esAnomalo && !confirmado) {
-        Alert.alert(
+        appAlert(
           'Consumo Anómalo Detectado',
-          `El consumo calculado (${resConsumo.consumo} m³) supera 3 veces el promedio mensual (${referencia.promedioMensual * 3}).
-              ¿Confirma que la cifra ingresada es correcta?`,
+          `El consumo calculado (${resConsumo.consumo} m³) supera 3 veces el promedio mensual (${referencia.promedioMensual * 3}). ¿Confirma que la cifra ingresada es correcta?`,
+          'warning',
           [
-            { text: 'Revisar Cifra', style: 'cancel' },
+            { texto: 'Revisar Cifra', secundario: true },
             {
-              text: 'Confirmar y Proceder',
+              texto: 'Confirmar y Proceder',
               onPress: () => {
                 setConfirmado(true);
                 if (!fotoUri) {
-                  Alert.alert(
+                  appAlert(
                     'Fotografía Requerida',
                     'Al registrarse un consumo anómalo, la foto de respaldo es obligatoria.',
-                    [{ text: 'Tomar Foto', onPress: abrirCamara }],
+                    'warning',
+                    [{ texto: 'Tomar Foto', onPress: abrirCamara }],
                   );
                   return;
                 }
@@ -409,20 +478,22 @@ function EditarLecturaModal({
       }
 
       if (resConsumo.esAnomalo && !fotoUri) {
-        Alert.alert(
+        appAlert(
           'Fotografía Requerida',
           'La fotografía del medidor es obligatoria ante un consumo anómalo.',
-          [{ text: 'Tomar Foto', onPress: abrirCamara }],
+          'warning',
+          [{ texto: 'Tomar Foto', onPress: abrirCamara }],
         );
         return;
       }
     }
 
     if (esDanado && !fotoUri) {
-      Alert.alert(
+      appAlert(
         'Fotografía Requerida',
         'La fotografía del medidor es obligatoria para registros en estado Dañado.',
-        [{ text: 'Tomar Foto', onPress: abrirCamara }],
+        'warning',
+        [{ texto: 'Tomar Foto', onPress: abrirCamara }],
       );
       return;
     }
@@ -642,9 +713,25 @@ function EditarLecturaModal({
                         onPress={() =>
                           handleValidarYGuardar({ lectura: l, motivo: m, descripcion: d })
                         }>
-                        <Text className="font-roboto-bold text-white text-base">
-                          {guardar.isPending ? 'Guardando...' : 'Guardar Cambios'}
-                        </Text>
+                        {guardar.isPending ? (
+                          <View className="flex-row items-center justify-center gap-2">
+                            <View className="w-5 h-5 items-center justify-center">
+                              <LottieView
+                                source={ANIMACION_REFRESH}
+                                autoPlay
+                                loop={true}
+                                style={{ width: 20, height: 20 }}
+                              />
+                            </View>
+                            <Text className="font-roboto-bold text-white text-base">
+                              Guardando...
+                            </Text>
+                          </View>
+                        ) : (
+                          <Text className="font-roboto-bold text-white text-base">
+                            Guardar Cambios
+                          </Text>
+                        )}
                       </Pressable>
                     </View>
                   </>

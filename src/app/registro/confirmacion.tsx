@@ -112,7 +112,7 @@ export default function ConfirmacionScreen() {
       datos.setFotoUri(guardarFotoPermanente(foto.uri, datos.medidorCodigo));
       setCamaraAbierta(false);
     } catch {
-      Alert.alert('Error', 'No se pudo guardar la fotografía. Intente nuevamente.');
+      appAlert('Error', 'No se pudo guardar la fotografía. Intente nuevamente.', 'error');
     }
   };
 
@@ -135,9 +135,9 @@ export default function ConfirmacionScreen() {
       queryClient.removeQueries({ queryKey: medidorQueryKey(datos.medidorCodigo) });
       sincronizarSiHayRed().catch(() => undefined);
 
-      Alert.alert('Lectura guardada', 'El registro quedó PENDIENTE de envío.', [
+      appAlert('Lectura guardada', 'El registro quedó PENDIENTE de envío.', 'success', [
         {
-          text: 'Aceptar',
+          texto: 'Aceptar',
           onPress: () => {
             if (router.canDismiss()) router.dismissAll();
             router.replace('/busqueda' as never);
@@ -146,16 +146,16 @@ export default function ConfirmacionScreen() {
       ]);
     } catch (e) {
       setGuardando(false);
-      Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo guardar la lectura.');
+      appAlert('Error', e instanceof Error ? e.message : 'No se pudo guardar la lectura.', 'error');
     }
   };
 
   const solicitarConfirmacionGuardado = () => {
     if (!ubicacionConfirmada) {
-      Alert.alert(
+      appAlert(
         'Ubicación Requerida',
         'Debe confirmar la ubicación GPS del medidor antes de guardar la lectura.',
-        [{ text: 'Entendido', style: 'default' }],
+        'warning',
       );
       return;
     }

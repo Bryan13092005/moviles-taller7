@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Modal, Pressable, Text, View } from 'react-native';
+import LottieView from 'lottie-react-native';
 
 export type TipoAlerta = 'error' | 'info' | 'warning' | 'success';
 
@@ -16,11 +17,11 @@ export interface AccionAlerta {
   secundario?: boolean;
 }
 
-const TIPOS: Record<TipoAlerta, { iconWrap: string; icon: string; icono: string }> = {
-  error: { iconWrap: 'bg-red-100', icon: 'text-red-500', icono: '✕' },
-  warning: { iconWrap: 'bg-amber-100', icon: 'text-amber-500', icono: '!' },
-  info: { iconWrap: 'bg-sky-100', icon: 'text-accent', icono: 'i' },
-  success: { iconWrap: 'bg-emerald-100', icon: 'text-emerald-500', icono: '✓' },
+const ANIMACIONES: Record<TipoAlerta, any> = {
+  success: require('../../assets/animations/Checklist.json'),
+  warning: require('../../assets/animations/Alert Warning Informtion.json'),
+  error: require('../../assets/animations/Error animation.json'),
+  info: require('../../assets/animations/Checklist.json'),
 };
 
 let mostrar: ((a: AlertaData) => void) | null = null;
@@ -45,14 +46,22 @@ export function AppAlertHost() {
     };
   }, []);
 
-  const t = alerta ? TIPOS[alerta.tipo] : TIPOS.info;
+  const animacion = alerta ? ANIMACIONES[alerta.tipo] : null;
 
   return (
     <Modal visible={!!alerta} transparent animationType="fade" onRequestClose={() => setAlerta(null)}>
       <View className="flex-1 bg-slate-900/55 justify-center items-center p-6">
-        <View className="w-full max-w-[360px] bg-white rounded-xl p-6 items-center shadow-xl">
-          <View className={`w-16 h-16 rounded-full items-center justify-center mb-4 ${t.iconWrap}`}>
-            <Text className={`font-roboto-bold text-3xl ${t.icon}`}>{t.icono}</Text>
+        <View className="w-full max-w-[360px] bg-white rounded-2xl p-6 items-center shadow-xl">
+          <View className="w-24 h-24 items-center justify-center mb-3">
+            {alerta && animacion && (
+              <LottieView
+                key={`${alerta.tipo}-${alerta.titulo}`}
+                source={animacion}
+                autoPlay={true}
+                loop={false}
+                style={{ width: '100%', height: '100%' }}
+              />
+            )}
           </View>
           <Text className="font-roboto-bold text-xl text-primary text-center mb-2">
             {alerta?.titulo}
