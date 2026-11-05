@@ -1,0 +1,35 @@
+@import 'tailwindcss';
+@import 'uniwind';
+
+/*
+ * Design tokens EPMAPS Campo.
+ * Se usan como clases de Tailwind, por ejemplo:
+ * bg-primary, text-muted, border-border, font-roboto-bold.
+ */
+@theme {
+  --font-roboto: 'Roboto_400Regular';
+  --font-roboto-medium: 'Roboto_500Medium';
+  --font-roboto-bold: 'Roboto_700Bold';
+
+  --color-primary: #004b87;
+  --color-primary-dark: #00325c;
+  --color-secondary: #0076c6;
+  --color-secondary-dark: #005a99;
+  --color-accent: #00a3e0;
+  --color-accent-soft: #e0f2fe;
+
+  --color-background: #f8fafc;
+  --color-card: #ffffff;
+  --color-input: #f1f5f9;
+  --color-border: #e2e8f0;
+  --color-foreground: #1e293b;
+  --color-muted: #64748b;
+
+  --color-danger: #ef4444;
+  --color-danger-strong: #dc2626;
+  --color-danger-soft: #fef2f2;
+  --color-success: #16a34a;
+  --color-success-soft: #dcfce7;
+  --color-warning: #d97706;
+  --color-warning-soft: #fef3c7;
+}

@@ -1,0 +1,51 @@
+{
+  "cli": {
+    "version": ">= 25.0.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "env": { 
+        "EXPO_PUBLIC_URL": "https://6ae13da7be3bc8fead9851ef.mockapi.io",
+        "EXPO_PUBLIC_FIREBASE_API_KEY": "AIzaSyDItnoXZrc5GwVlNvpo0qjRo5jzgdB4YvQ",
+        "EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN": "prueba1-v2.firebaseapp.com",
+        "EXPO_PUBLIC_FIREBASE_PROJECT_ID": "prueba1-v2",
+        "EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET": "prueba1-v2.firebasestorage.app",
+        "EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID": "691238393719",
+        "EXPO_PUBLIC_FIREBASE_APP_ID": "1:691238393719:web:61940fa00958858478b372"
+      }
+    },
+    "preview": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": { 
+        "EXPO_PUBLIC_URL": "https://6ae13da7be3bc8fead9851ef.mockapi.io",
+        "EXPO_PUBLIC_FIREBASE_API_KEY": "AIzaSyDItnoXZrc5GwVlNvpo0qjRo5jzgdB4YvQ",
+        "EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN": "prueba1-v2.firebaseapp.com",
+        "EXPO_PUBLIC_FIREBASE_PROJECT_ID": "prueba1-v2",
+        "EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET": "prueba1-v2.firebasestorage.app",
+        "EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID": "691238393719",
+        "EXPO_PUBLIC_FIREBASE_APP_ID": "1:691238393719:web:61940fa00958858478b372"
+      }
+    },
+    "production": {
+      "autoIncrement": true,
+      "env": { 
+        "EXPO_PUBLIC_URL": "https://6ae13da7be3bc8fead9851ef.mockapi.io",
+        "EXPO_PUBLIC_FIREBASE_API_KEY": "AIzaSyDItnoXZrc5GwVlNvpo0qjRo5jzgdB4YvQ",
+        "EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN": "prueba1-v2.firebaseapp.com",
+        "EXPO_PUBLIC_FIREBASE_PROJECT_ID": "prueba1-v2",
+        "EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET": "prueba1-v2.firebasestorage.app",
+        "EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID": "691238393719",
+        "EXPO_PUBLIC_FIREBASE_APP_ID": "1:691238393719:web:61940fa00958858478b372"
+      }
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}
